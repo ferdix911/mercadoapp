@@ -188,6 +188,15 @@
   }
   .check svg{display:none;width:13px;height:13px;}
   li.checked .check svg{display:block;}
+  .check.pop{animation:popCheck 0.32s ease;}
+  @keyframes popCheck{
+    0%{transform:scale(1);}
+    35%{transform:scale(1.35);}
+    60%{transform:scale(0.92);}
+    100%{transform:scale(1);}
+  }
+  li{transition:background 0.25s ease, border-color 0.25s ease;}
+  li.checked .item-text{transition:color 0.25s ease;}
 
   .item-text{
     flex:1;
@@ -258,21 +267,62 @@
 <script>
 const STORAGE_KEY = 'mercado-state-v2';
 const CATEGORIES = ['Frutas y verduras', 'Carnes', 'Aseo personal', 'Varios'];
+const DEFAULT_ITEMS = [
+  { text: 'Plátanos verdes', category: 'Frutas y verduras' },
+  { text: 'Cebollas rojas', category: 'Frutas y verduras' },
+  { text: 'Aji', category: 'Frutas y verduras' },
+  { text: 'Limones', category: 'Frutas y verduras' },
+  { text: 'Aguacate', category: 'Frutas y verduras' },
+  { text: 'Ajo', category: 'Frutas y verduras' },
+  { text: 'Papaya', category: 'Frutas y verduras' },
+  { text: 'Piña', category: 'Frutas y verduras' },
+  { text: 'Bolsas de fresas', category: 'Frutas y verduras' },
+  { text: 'Zanahorias', category: 'Frutas y verduras' },
+  { text: 'Tomates', category: 'Frutas y verduras' },
+  { text: 'Plátanos amarillos', category: 'Frutas y verduras' },
+  { text: 'Manzanas verdes', category: 'Frutas y verduras' },
+  { text: 'Pepinos', category: 'Frutas y verduras' },
+  { text: 'Arándanos', category: 'Frutas y verduras' },
+  { text: 'Bananas', category: 'Frutas y verduras' },
+  { text: 'Cloro morado', category: 'Aseo personal' },
+  { text: 'Lavaplatos', category: 'Aseo personal' },
+  { text: 'Desodorantes', category: 'Aseo personal' },
+  { text: 'Papel higiénico', category: 'Aseo personal' },
+  { text: 'Avena', category: 'Varios' },
+  { text: 'Huevos', category: 'Varios' },
+  { text: 'Mantequilla', category: 'Varios' },
+  { text: 'Aceite de oliva', category: 'Varios' },
+  { text: 'Sal', category: 'Varios' },
+  { text: 'Arroz', category: 'Varios' },
+  { text: 'Pasta', category: 'Varios' },
+  { text: 'Lentejas', category: 'Varios' },
+  { text: 'Especias (ajo, orégano...)', category: 'Varios' },
+  { text: 'Salsa de tomate', category: 'Varios' },
+  { text: 'Canela', category: 'Varios' },
+  { text: 'Cacao', category: 'Varios' }
+];
 let state = { items: [], shoppingActive: false };
 let selectedCat = CATEGORIES[0];
+let justToggled = null;
 
 function uid(){
   return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 }
 
 function load(){
+  let hadSavedData = false;
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){
       state = JSON.parse(raw);
+      hadSavedData = true;
     }
   }catch(e){
     // sin datos guardados, se usa el estado por defecto
+  }
+  if(!hadSavedData){
+    state.items = DEFAULT_ITEMS.map(d => ({ id: uid(), text: d.text, checked: false, category: d.category }));
+    save();
   }
   renderCatSelect();
   render();
@@ -338,7 +388,7 @@ function render(){
       if(item.checked) li.classList.add('checked');
 
       const check = document.createElement('div');
-      check.className = 'check';
+      check.className = 'check' + (item.id === justToggled ? ' pop' : '');
       check.setAttribute('role','checkbox');
       check.setAttribute('aria-checked', item.checked ? 'true':'false');
       check.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#08150d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
@@ -363,6 +413,7 @@ function render(){
     sectionsEl.appendChild(section);
   });
 
+  justToggled = null;
   renderSessionBar();
 }
 
@@ -398,6 +449,7 @@ function renderSessionBar(){
 function toggleItem(id){
   const item = state.items.find(i => i.id === id);
   if(item) item.checked = !item.checked;
+  justToggled = id;
   render();
   save();
 }
